@@ -3,8 +3,9 @@
 ## Requirements
 - pytorch
 - cuda
+- dataset/ folder
 ```
-Dataset
+pip install -r requirements.txt
 ```
 
 ## Train
