@@ -1,26 +1,27 @@
 import torch
 from dataset import Dataset
-import torchvision
 import torch.nn as nn
 import torch.optim as optim
 import numpy as np
+from network import vgg_pretrained
 
-chkpt_dir='chkpts'
+chkpt_dir = 'chkpts'
 dataset_root = 'dataset'
-n_epoch = 100
+n_epoch = 50
+best_eval_loss = 9999
 
 dataset = Dataset(dataset_root, set_seed=True)
 dataloader = torch.utils.data.DataLoader(
     dataset, batch_size=32, shuffle=True, num_workers=4, pin_memory=True)
 
-net = torchvision.models.vgg19_bn(pretrained=True, progress=False)
-net.classifier[6]=nn.Linear(4096,10)
+net = vgg_pretrained()
 
 net.cuda()
 net.train()
 
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.SGD(net.parameters(), lr=1e-3, momentum=0.9)
+optimizer = optim.Adam(net.parameters())
+scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=10)
 
 eval_loss = np.empty((dataset.get_eval_length(),))
 
@@ -30,38 +31,48 @@ for epoch in range(n_epoch):
     TRAIN
     '''
     for batch, labels in dataloader:
-        batch=batch.cuda()
-        labels=labels.cuda()
+        batch = batch.cuda()
+        labels = labels.cuda()
 
         optimizer.zero_grad()
+        
         output = net(batch)
 
         loss = criterion(output, labels)
+
         loss.backward()
+        optimizer.step()
+
+        total_iterations += 1
 
     '''
     VALIDATION
     '''
-    if total_iterations % 500 == 0:
-        net.eval()
+    net.eval()
 
-        with torch.no_grad():
-            for j in range(dataset.get_eval_length()):
-                image, label = dataset.get_eval_item(j)
-                image = image.cuda()
-                label = label.cuda()
+    with torch.no_grad():
+        for j in range(dataset.get_eval_length()):
+            image, label = dataset.get_eval_item(j)
+            image = image.cuda()
+            label = label.cuda()
 
-                output = net(batch)
+            image = image.unsqueeze(0)
+            label = label.unsqueeze(0)
 
-                eval_loss[j] = criterion(output, label)
+            output = net(image)
 
-            # save best chkpt
-            if np.mean(eval_loss) < best_eval_loss:
-                fckpt_name = '{}/MODEL1_BEST.pth'.format(
-                    chkpt_dir)
-                torch.save(net.state_dict(), fckpt_name)
-                best_eval_loss = np.mean(eval_loss)
+            eval_loss[j] = criterion(output, label)
 
-        net.train()
-            
-    optimizer.step()
+        print('e{} - train loss {:.4f}, valid loss {:.4f}'.format(
+            epoch, loss.item(), np.mean(eval_loss)))
+
+        # save best chkpt
+        if np.mean(eval_loss) < best_eval_loss:
+            fckpt_name = '{}/MODEL1_BEST.pth'.format(
+                chkpt_dir)
+            torch.save(net.state_dict(), fckpt_name)
+            best_eval_loss = np.mean(eval_loss)
+
+    net.train()
+
+    scheduler.step()
