@@ -1,8 +1,6 @@
 # intro2ml_project
 
 ## Requirements
-- pytorch
-- cuda
 - dataset/ folder
 ```
 pip install -r requirements.txt
@@ -13,7 +11,7 @@ pip install -r requirements.txt
 python train_{x}.py
 ```
 
-## Test
+## Generate csv
 ```
-python test.py -m <model name> <model chkpt>
+python generate_csv.py
 ```

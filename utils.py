@@ -2,6 +2,8 @@ import torch
 import network
 from prettytable import PrettyTable
 import inspect
+from PIL import Image
+from torchvision import transforms
 
 
 def get_total_grad(net):
@@ -31,3 +33,14 @@ def get_network_class_names():
     net_classes = inspect.getmembers(network, inspect.isclass)
     net_class_names = [x[0] for x in net_classes]
     return net_class_names
+
+def load_image(path):
+    image = Image.open(path)
+    
+    to_tensor = transforms.ToTensor()
+    image = to_tensor(image)
+    
+    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    image = normalize(image)
+
+    return image

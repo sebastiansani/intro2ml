@@ -3,14 +3,16 @@ import torch
 import torch.utils.data as data
 import numpy as np
 from classes import classes
-from PIL import Image
 from torchvision import transforms
+from utils import load_image
 
 
 class Dataset(data.Dataset):
-    def __init__(self, root, validation_to_train=0.05, set_seed=False):
+    def __init__(self, root, validation_to_train=0.05, set_seed=False, do_data_augmentation=True):
         if set_seed:
             np.random.seed(12345678)
+
+        self.do_data_augmentation = do_data_augmentation
 
         self.root = root
         self.train_dir = os.path.join(root, 'train')
@@ -32,22 +34,19 @@ class Dataset(data.Dataset):
                 self.valid_set.extend(
                     files_with_labels[:n_files_to_validation])
 
-    def load_image(self, path):
-        preprocess = transforms.Compose([
-            transforms.Resize(256),
-            transforms.CenterCrop(224),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[
-                                 0.229, 0.224, 0.225]),
-        ])
-        image = Image.open(path)
-        image = preprocess(image)
-        return image
-
     def __getitem__(self, index):
         image, label = self.train_set[index]
         image = os.path.join(self.train_dir, classes[label], image)
-        return self.load_image(image), label
+        image = load_image(image)
+        if self.do_data_augmentation:
+            data_aug = transforms.Compose(
+                [transforms.ColorJitter(),
+                 transforms.RandomGrayscale(),
+                 transforms.RandomRotation(90),
+                 transforms.RandomHorizontalFlip(),
+                 transforms.RandomVerticalFlip()])
+            image = data_aug(image)
+        return image, label
 
     def __len__(self):
         return len(self.train_set)
@@ -58,4 +57,4 @@ class Dataset(data.Dataset):
     def get_eval_item(self, index):
         image, label = self.valid_set[index]
         image = os.path.join(self.train_dir, classes[label], image)
-        return self.load_image(image), torch.tensor(label)
+        return load_image(image), torch.tensor(label)

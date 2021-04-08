@@ -5,19 +5,7 @@ from PIL import Image
 from network import vgg_pretrained
 import torch
 from classes import classes
-
-
-def load_image(path):
-    preprocess = transforms.Compose([
-        transforms.Resize(256),
-        transforms.CenterCrop(224),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[
-            0.229, 0.224, 0.225]),
-    ])
-    image = Image.open(path)
-    image = preprocess(image)
-    return image
+from utils import load_image
 
 
 n_files_to_test = 5321

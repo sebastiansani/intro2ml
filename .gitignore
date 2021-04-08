@@ -3,5 +3,7 @@ venv/
 old/
 chkpts/
 logs/
+random_chkpts/
 
+*.csv
 dataset*
