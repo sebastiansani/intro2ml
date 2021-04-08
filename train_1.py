@@ -9,18 +9,25 @@ chkpt_dir = 'chkpts'
 dataset_root = 'dataset'
 n_epoch = 50
 best_eval_loss = 9999
+batch_size = 32
+
+class_sample_count = [1840, 757, 1311, 1297, 996, 1280, 1851, 1419, 1430, 234]
+weights = 1 / torch.Tensor(class_sample_count)
+sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, batch_size)
+weights = weights.double()
 
 dataset = Dataset(dataset_root, set_seed=True)
 dataloader = torch.utils.data.DataLoader(
-    dataset, batch_size=32, shuffle=True, num_workers=4, pin_memory=True)
+    dataset, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True, sampler=sampler)
 
 net = vgg_pretrained()
 
 net.cuda()
 net.train()
 
+
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(net.parameters())
+optimizer = optim.Adam(net.parameters(), weight_decay=1e-3)
 scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=10)
 
 eval_loss = np.empty((dataset.get_eval_length(),))
@@ -35,7 +42,7 @@ for epoch in range(n_epoch):
         labels = labels.cuda()
 
         optimizer.zero_grad()
-        
+
         output = net(batch)
 
         loss = criterion(output, labels)
