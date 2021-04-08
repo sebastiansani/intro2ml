@@ -64,6 +64,9 @@ for epoch in range(n_epoch):
     with torch.no_grad():
 
         accuracy=0
+        guess_count = [0 for i in range(10)]
+        correct_guesses = [0 for i in range(10)]
+
         for j in range(dataset.get_eval_length()):
             image, label = dataset.get_eval_item(j)
             image = image.cuda()
@@ -74,13 +77,20 @@ for epoch in range(n_epoch):
 
             output = net(image)
 
-            accuracy += (torch.argmax(output)==label).sum()
+            prediction=torch.argmax(output)
+            guess_count[prediction]+=1
+            if prediction==label:
+                accuracy += 1
+                correct_guesses[prediction]+=1
 
             eval_loss[j] = criterion(output, label)
 
+        class_wise_acc = sum([correct_guesses[i]/guess_count[i] if guess_count[i]!=0 else 0 for i in range(10)])/10
+        
         accuracy=accuracy/dataset.get_eval_length()
-        print('e{:02d} - train_loss {:.4f} | valid_loss {:.4f} | accuracy {:.4f}'.format(
-            epoch, loss.item(), np.mean(eval_loss), accuracy.item()))
+        
+        print('e{:02d} - train_loss {:.4f} | valid_loss {:.4f} | accuracy {:.4f} | class_wise_acc {:.4f}'.format(
+            epoch, loss.item(), np.mean(eval_loss), accuracy, class_wise_acc))
 
         # save best chkpt
         if np.mean(eval_loss) < best_eval_loss:

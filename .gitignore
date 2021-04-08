@@ -4,6 +4,6 @@ old/
 chkpts/
 logs/
 random_chkpts/
+dataset/
 
 *.csv
-dataset*
