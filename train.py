@@ -27,20 +27,24 @@ parser.add_argument('-m', '--model', default='vgg_pretrained',
                     help='model to train', type=str, choices=net_class_names)
 parser.add_argument(
     '-s', '--save', help='create chkpts and log files', action='store_true')
+parser.add_argument(
+    '-b', '--balance', help='balance dataset classes', action='store_true')
 args = parser.parse_args()
 
 log_progress = args.save  # create chkpts and log files
+balance_data = args.balance
 
 dataset = Dataset(dataset_root, set_seed=True)
 
-weights=dataset.get_sample_weights()
-sampler=torch.utils.data.sampler.WeightedRandomSampler(weights, len(weights))
-dataloader = torch.utils.data.DataLoader(
-    dataset, batch_size=batch_size, num_workers=4, pin_memory=True, sampler=sampler)
-'''
-dataloader = torch.utils.data.DataLoader(
-    dataset, shuffle=True, batch_size=batch_size, num_workers=4, pin_memory=True)
-'''
+if balance_data:
+    weights = dataset.get_sample_weights()
+    sampler = torch.utils.data.sampler.WeightedRandomSampler(
+        weights, len(weights))
+    dataloader = torch.utils.data.DataLoader(
+        dataset, batch_size=batch_size, num_workers=4, pin_memory=True, sampler=sampler)
+else:
+    dataloader = torch.utils.data.DataLoader(
+        dataset, shuffle=True, batch_size=batch_size, num_workers=4, pin_memory=True)
 
 # get model
 class_ = getattr(network, args.model)
@@ -51,7 +55,7 @@ net.train()
 
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(net.parameters(), lr=1e-4, weight_decay=1e-5)
-scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=12)
+scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=10)
 
 if not os.path.isdir(chkpt_dir):
     os.mkdir(chkpt_dir)
@@ -59,8 +63,9 @@ if not os.path.isdir(chkpt_dir):
 eval_loss = np.empty((dataset.get_eval_length(),))
 
 start_time = time.time()
-print('training {}'.format(args.model))
+print('training', args.model)
 print('log progress', log_progress)
+print('balance data', balance_data)
 print('start', time.ctime())
 print('-'*30)
 
@@ -123,9 +128,10 @@ for epoch in range(n_epoch):
 
         # save best chkpt
         if log_progress and np.mean(eval_loss) < best_eval_loss:
-            fckpt_name = '{}/{}_BEST.pth'.format(
-                chkpt_dir, args.model)
-            torch.save(net.state_dict(), fckpt_name)
+            fckpt_name = '{}{}_best.pth'.format(
+                args.model, '_balanced' if balance_data else '')
+            fckpt_path = os.path.join(chkpt_dir, fckpt_name)
+            torch.save(net.state_dict(), fckpt_path)
             best_eval_loss = np.mean(eval_loss)
 
     net.train()

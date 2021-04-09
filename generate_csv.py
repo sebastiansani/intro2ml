@@ -25,13 +25,16 @@ parser.add_argument('-m', '--model', default='vgg_pretrained',
                     help='model to benchmark', type=str, choices=net_class_names)
 args = parser.parse_args()
 
+chkpt_name = args.name
+
+print('loading {} on model {}'.format(chkpt_name, args.model))
+
 # get model
 class_ = getattr(network, args.model)
 net = class_()
 
-ckpt_name = args.name
 
-checkpoint = '{}/{}'.format(checkpoint_dir, ckpt_name)
+checkpoint = '{}/{}'.format(checkpoint_dir, chkpt_name)
 net.load_state_dict(torch.load(checkpoint))
 
 net.cuda()
@@ -40,11 +43,13 @@ net.eval()
 if not os.path.isdir(results_dir):
     os.mkdir(results_dir)
 
-csv_file_name = ckpt_name.split('.')[0]+'_results.csv'
+csv_file_name = chkpt_name.split('.')[0]+'_results.csv'
 csv_file_path = os.path.join(results_dir, csv_file_name)
 
 csvfile = open(csv_file_path, 'w', newline='')
 spamwriter = csv.writer(csvfile)
+
+print('writing', csv_file_name)
 
 for image_idx in range(n_files_to_test):
     image = load_image(os.path.join(test_dir, str(
