@@ -31,16 +31,16 @@ args = parser.parse_args()
 
 log_progress = args.save  # create chkpts and log files
 
-print('-'*30)
-print('training {}'.format(args.model))
-if log_progress:
-    print('model is being saved')
-else:
-    print('model is NOT being saved, run --save to generate chkpts and log files')
-
 dataset = Dataset(dataset_root, set_seed=True)
+
+weights=dataset.get_sample_weights()
+sampler=torch.utils.data.sampler.WeightedRandomSampler(weights, len(weights))
+dataloader = torch.utils.data.DataLoader(
+    dataset, batch_size=batch_size, num_workers=4, pin_memory=True, sampler=sampler)
+'''
 dataloader = torch.utils.data.DataLoader(
     dataset, shuffle=True, batch_size=batch_size, num_workers=4, pin_memory=True)
+'''
 
 # get model
 class_ = getattr(network, args.model)
@@ -59,6 +59,8 @@ if not os.path.isdir(chkpt_dir):
 eval_loss = np.empty((dataset.get_eval_length(),))
 
 start_time = time.time()
+print('training {}'.format(args.model))
+print('log progress', log_progress)
 print('start', time.ctime())
 print('-'*30)
 
@@ -121,8 +123,8 @@ for epoch in range(n_epoch):
 
         # save best chkpt
         if log_progress and np.mean(eval_loss) < best_eval_loss:
-            fckpt_name = '{}/MODEL1_BEST.pth'.format(
-                chkpt_dir)
+            fckpt_name = '{}/{}_BEST.pth'.format(
+                chkpt_dir, args.model)
             torch.save(net.state_dict(), fckpt_name)
             best_eval_loss = np.mean(eval_loss)
 

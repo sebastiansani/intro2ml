@@ -34,6 +34,17 @@ class Dataset(data.Dataset):
                 self.valid_set.extend(
                     files_with_labels[:n_files_to_validation])
 
+    def get_sample_weights(self):
+        class_counts = [1840, 757, 1311, 1297,
+                        996, 1280, 1851, 1419, 1430, 234]
+        class_weights = 1. / torch.Tensor(class_counts)
+        sample_weights = [class_weights[class_idx]
+                          for (_, class_idx) in self.train_set]
+        return sample_weights
+
+    def __len__(self):
+        return len(self.train_set)
+
     def __getitem__(self, index):
         image, label = self.train_set[index]
         image = os.path.join(self.train_dir, classes[label], image)
@@ -47,9 +58,6 @@ class Dataset(data.Dataset):
                  transforms.RandomVerticalFlip()])
             image = data_aug(image)
         return image, label
-
-    def __len__(self):
-        return len(self.train_set)
 
     def get_eval_length(self):
         return len(self.valid_set)

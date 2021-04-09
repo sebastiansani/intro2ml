@@ -16,13 +16,14 @@ checkpoint_dir = 'model'
 test_dir = os.path.join(dataset_dir, 'test')
 
 # get network class names
-net_class_names=get_network_class_names()
+net_class_names = get_network_class_names()
 
 # parse arguments
 parser = argparse.ArgumentParser(description='benchmark pretrained model')
 parser.add_argument('name', help='checkpoint name')
-parser.add_argument('-m', '--model', default='vgg_pretrained', help='model to benchmark', type=str, choices=net_class_names)
-args=parser.parse_args()
+parser.add_argument('-m', '--model', default='vgg_pretrained',
+                    help='model to benchmark', type=str, choices=net_class_names)
+args = parser.parse_args()
 
 # get model
 class_ = getattr(network, args.model)
@@ -39,8 +40,8 @@ net.eval()
 if not os.path.isdir(results_dir):
     os.mkdir(results_dir)
 
-csv_file_name=ckpt_name.split('.')[0]+'_results.csv'
-csv_file_path=os.path.join(results_dir, csv_file_name)
+csv_file_name = ckpt_name.split('.')[0]+'_results.csv'
+csv_file_path = os.path.join(results_dir, csv_file_name)
 
 csvfile = open(csv_file_path, 'w', newline='')
 spamwriter = csv.writer(csvfile)
