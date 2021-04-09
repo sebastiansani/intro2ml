@@ -34,6 +34,7 @@ def get_network_class_names():
     net_class_names = [x[0] for x in net_classes]
     return net_class_names
 
+
 def load_image(path):
     image = Image.open(path)
     
