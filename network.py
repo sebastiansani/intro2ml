@@ -25,3 +25,13 @@ class resnet_pretrained(nn.Module):
 
     def forward(self, x):
         return self.res(x)
+
+
+class resnet(nn.Module):
+    def __init__(self):
+        super(resnet, self).__init__()
+        self.res = torchvision.models.resnet152(pretrained=False)
+        self.res.fc = nn.Linear(4*512, num_classes)
+
+    def forward(self, x):
+        return self.res(x)

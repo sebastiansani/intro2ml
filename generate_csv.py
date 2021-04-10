@@ -33,19 +33,21 @@ print('loading {} on model {}'.format(chkpt_name, args.model))
 class_ = getattr(network, args.model)
 net = class_()
 
-
+# load checkpoint
 checkpoint = '{}/{}'.format(checkpoint_dir, chkpt_name)
 net.load_state_dict(torch.load(checkpoint))
 
 net.cuda()
 net.eval()
 
+# make results dir
 if not os.path.isdir(results_dir):
     os.mkdir(results_dir)
 
 csv_file_name = chkpt_name.split('.')[0]+'_results.csv'
 csv_file_path = os.path.join(results_dir, csv_file_name)
 
+# open csv file
 csvfile = open(csv_file_path, 'w', newline='')
 spamwriter = csv.writer(csvfile)
 
@@ -56,6 +58,7 @@ for image_idx in range(n_files_to_test):
         image_idx)+'.png')).unsqueeze(0).cuda()
     with torch.no_grad():
         output = net(image).squeeze()
+    # write csv row
     spamwriter.writerow([image_idx, classes[torch.argmax(output).item()]])
 
 csvfile.close()

@@ -35,13 +35,20 @@ def get_network_class_names():
     return net_class_names
 
 
-def load_image(path):
+def load_image(path, grayscale=False):
     image = Image.open(path)
     
     to_tensor = transforms.ToTensor()
     image = to_tensor(image)
+
+    crop = transforms.CenterCrop(224)
+    image = crop(image)
     
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     image = normalize(image)
+    
+    if grayscale:
+        grayscale = transforms.Grayscale(num_output_channels=3)
+        image = grayscale(image)
 
     return image
