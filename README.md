@@ -1,5 +1,7 @@
 # intro2ml_project
 
+ML Visual classification university project
+
 ## Requirements
 - dataset/ folder
 ```
